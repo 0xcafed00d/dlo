@@ -11,12 +11,14 @@ import (
 )
 
 func TestFileIndex(t *testing.T) {
+	assert := assert.Make(t)
+
 	fi := MakeFileIndex("data")
 
-	assert.Equal(t, fi.makeFileName(0), "data/00000/000")
-	assert.Equal(t, fi.makeFileName(999), "data/00000/999")
-	assert.Equal(t, fi.makeFileName(1000), "data/00001/000")
-	assert.Equal(t, fi.makeFileName(12345678), "data/12345/678")
+	assert(fi.makeFileName(0)).Equal("data/00000/000")
+	assert(fi.makeFileName(999)).Equal("data/00000/999")
+	assert(fi.makeFileName(1000)).Equal("data/00001/000")
+	assert(fi.makeFileName(12345678)).Equal("data/12345/678")
 }
 
 func exist(fname string) bool {

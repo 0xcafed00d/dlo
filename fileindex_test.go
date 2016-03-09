@@ -11,14 +11,14 @@ import (
 )
 
 func TestFileIndex(t *testing.T) {
-	assert := assert.Make(t)
+	verify := assert.Make(t)
 
 	fi := MakeFileIndex("data")
 
-	assert(fi.makeFileName(0)).Equal("data/00000/000")
-	assert(fi.makeFileName(999)).Equal("data/00000/999")
-	assert(fi.makeFileName(1000)).Equal("data/00001/000")
-	assert(fi.makeFileName(12345678)).Equal("data/12345/678")
+	verify(fi.makeFileName(0)).Equal("data/00000/000")
+	verify(fi.makeFileName(999)).Equal("data/00000/999")
+	verify(fi.makeFileName(1000)).Equal("data/00001/000")
+	verify(fi.makeFileName(12345678)).Equal("data/12345/678")
 }
 
 func exist(fname string) bool {
@@ -33,25 +33,25 @@ func exist(fname string) bool {
 
 func TestStore(t *testing.T) {
 
-	assert := assert.Make(t)
+	verify := assert.Make(t)
 
 	path := filepath.Join("/tmp", "testdata", strconv.FormatInt(time.Now().UnixNano(), 10))
 
 	fi := MakeFileIndex(path)
 
 	err := fi.MakeDummyFiles(3999)
-	assert(err).IsNil()
+	verify(err).IsNil()
 
 	fi.RefeshFileCount()
-	assert(fi.fileCount).Equal(uint64(3999))
+	verify(fi.fileCount).Equal(uint64(3999))
 
-	assert(exist(filepath.Join(path, "00003", "999"))).Equal(false)
+	verify(exist(filepath.Join(path, "00003", "999"))).Equal(false)
 	index := fi.ReserveFileIndex()
-	assert(fi.StoreFile(index, "test file")).NoError()
-	assert(exist(filepath.Join(path, "00003", "999"))).Equal(true)
+	verify(fi.StoreFile(index, "test file")).NoError()
+	verify(exist(filepath.Join(path, "00003", "999"))).Equal(true)
 
-	assert(exist(filepath.Join(path, "00004", "000"))).Equal(false)
+	verify(exist(filepath.Join(path, "00004", "000"))).Equal(false)
 	index = fi.ReserveFileIndex()
-	assert(fi.StoreFile(index, "test file")).NoError()
-	assert(exist(filepath.Join(path, "00004", "000"))).Equal(true)
+	verify(fi.StoreFile(index, "test file")).NoError()
+	verify(exist(filepath.Join(path, "00004", "000"))).Equal(true)
 }

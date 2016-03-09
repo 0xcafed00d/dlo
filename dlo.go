@@ -8,13 +8,36 @@ import (
 	"os"
 )
 
-func handler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "POST" {
-		http.ServeFile(w, r, "www/dloview.html")
-	} else {
-		http.ServeFile(w, r, "www/dloedit.html")
-	}
+func handlerEditLetter(w http.ResponseWriter, r *http.Request) {
+	log.Println("handlerEditLetter")
+	http.ServeFile(w, r, "www/dloedit.html")
+}
 
+func handlerPostLetter(w http.ResponseWriter, r *http.Request) {
+	log.Println("handlerPostLetter:", r.Form["messagetext"])
+	http.ServeFile(w, r, "www/dloview.html")
+}
+
+func handlerViewRandom(w http.ResponseWriter, r *http.Request) {
+	log.Println("handlerViewRandom")
+	http.ServeFile(w, r, "www/dloview.html")
+}
+
+func handler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+
+	if r.Method == "POST" {
+		if _, ok := r.Form["postletter"]; ok {
+			handlerPostLetter(w, r)
+			return
+		}
+
+		if _, ok := r.Form["viewrandom"]; ok {
+			handlerViewRandom(w, r)
+			return
+		}
+	}
+	handlerEditLetter(w, r)
 }
 
 type Config struct {

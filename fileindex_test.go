@@ -31,26 +31,25 @@ func exist(fname string) bool {
 
 func TestStore(t *testing.T) {
 
+	assert := assert.Make(t)
+
 	path := filepath.Join("/tmp", "testdata", strconv.FormatInt(time.Now().UnixNano(), 10))
 
 	fi := MakeFileIndex(path)
 
 	err := fi.MakeDummyFiles(3999)
-	assert.Nil(t, err)
+	assert(err).IsNil()
 
 	fi.RefeshFileCount()
-	assert.Equal(t, fi.fileCount, uint64(3999))
+	assert(fi.fileCount).Equal(uint64(3999))
 
-	assert.Equal(t, exist(filepath.Join(path, "00003", "999")), false)
+	assert(exist(filepath.Join(path, "00003", "999"))).Equal(false)
 	index := fi.ReserveFileIndex()
-	err = fi.StoreFile(index, "test file")
-	assert.Nil(t, err)
-	assert.Equal(t, exist(filepath.Join(path, "00003", "999")), true)
+	assert(fi.StoreFile(index, "test file")).NoError()
+	assert(exist(filepath.Join(path, "00003", "999"))).Equal(true)
 
-	assert.Equal(t, exist(filepath.Join(path, "00004", "000")), false)
+	assert(exist(filepath.Join(path, "00004", "000"))).Equal(false)
 	index = fi.ReserveFileIndex()
-	err = fi.StoreFile(index, "test file")
-	assert.Nil(t, err)
-	assert.Equal(t, exist(filepath.Join(path, "00004", "000")), true)
-
+	assert(fi.StoreFile(index, "test file")).NoError()
+	assert(exist(filepath.Join(path, "00004", "000"))).Equal(true)
 }

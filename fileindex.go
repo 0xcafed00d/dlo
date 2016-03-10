@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"sync"
 )
 
 type FileIndex struct {
 	sync.Mutex
 	dataRoot  string
-	fileCount uint64
+	fileCount int64
 }
 
 func MakeFileIndex(dataRoot string) *FileIndex {
@@ -38,7 +39,7 @@ func (fi *FileIndex) RefeshFileCount() {
 	}
 	files, err := filepath.Glob(filepath.Join(folders[len(folders)-1], "*"))
 
-	fi.fileCount = uint64(((len(folders) - 1) * 1000) + len(files))
+	fi.fileCount = int64(((len(folders) - 1) * 1000) + len(files))
 }
 
 func (fi *FileIndex) MakeDummyFiles(count int) error {
@@ -52,13 +53,13 @@ func (fi *FileIndex) MakeDummyFiles(count int) error {
 	return nil
 }
 
-func (fi *FileIndex) makeFileName(index uint64) string {
+func (fi *FileIndex) makeFileName(index int64) string {
 	return filepath.Join(fi.dataRoot,
 		fmt.Sprintf("%05v", index/1000),
 		fmt.Sprintf("%03v", index%1000))
 }
 
-func (fi *FileIndex) StoreFile(index uint64, text string) error {
+func (fi *FileIndex) StoreFile(index int64, text string) error {
 
 	// first file in a set? create folder.
 	if index%1000 == 0 {
@@ -81,11 +82,21 @@ func (fi *FileIndex) StoreFile(index uint64, text string) error {
 	return nil
 }
 
-func (fi *FileIndex) ReserveFileIndex() uint64 {
+func (fi *FileIndex) ReserveFileIndex() int64 {
 	fi.Mutex.Lock()
 	defer fi.Unlock()
 
 	n := fi.fileCount
 	fi.fileCount++
 	return n
+}
+
+func (fi *FileIndex) GetFileCount() int64 {
+	fi.Mutex.Lock()
+	defer fi.Unlock()
+	return fi.fileCount
+}
+
+func (fi *FileIndex) LoadFile(index int64) (string, error) {
+	return "some file data " + strconv.FormatInt(index, 10), nil
 }

@@ -10,42 +10,10 @@ import (
 	"path/filepath"
 )
 
-var EditTemplate *template.Template
-var ViewTemplate *template.Template
-
-func handlerEditLetter(w http.ResponseWriter, r *http.Request) {
-	log.Println("handlerEditLetter")
-	logOnError(EditTemplate.Execute(w, ""))
-}
-
-func handlerPostLetter(w http.ResponseWriter, r *http.Request) {
-	data := r.Form["messagetext"][0]
-	log.Println("handlerPostLetter:", data)
-	logOnError(ViewTemplate.Execute(w, data))
-}
-
-func handlerViewRandom(w http.ResponseWriter, r *http.Request) {
-	log.Println("handlerViewRandom")
-	data := "this is some text"
-	logOnError(ViewTemplate.Execute(w, data))
-}
-
-func handler(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-
-	if r.Method == "POST" {
-		if _, ok := r.Form["postletter"]; ok {
-			handlerPostLetter(w, r)
-			return
-		}
-
-		if _, ok := r.Form["viewrandom"]; ok {
-			handlerViewRandom(w, r)
-			return
-		}
-	}
-	handlerEditLetter(w, r)
-}
+var files *FileIndex
+var editTemplate *template.Template
+var viewTemplate *template.Template
+var random *AtomicRand
 
 type Config struct {
 	ListenPort int
@@ -79,9 +47,58 @@ func logOnError(err error) {
 	}
 }
 
+func handlerEditLetter(w http.ResponseWriter, r *http.Request) {
+	log.Println("handlerEditLetter")
+	logOnError(editTemplate.Execute(w, ""))
+}
+
+func handlerPostLetter(w http.ResponseWriter, r *http.Request) {
+	data := r.Form["messagetext"][0]
+	log.Println("handlerPostLetter:", data)
+	index := files.ReserveFileIndex()
+	logOnError(files.StoreFile(index, data))
+	logOnError(viewTemplate.Execute(w, data))
+}
+
+func handlerViewRandom(w http.ResponseWriter, r *http.Request) {
+	log.Println("handlerViewRandom")
+
+	n := random.Int63n(files.GetFileCount())
+	data, err := files.LoadFile(n)
+	logOnError(err)
+	logOnError(viewTemplate.Execute(w, data))
+}
+
+func handler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	log.Println(r.RequestURI)
+
+	if r.Method == "POST" {
+		if _, ok := r.Form["postletter"]; ok {
+			handlerPostLetter(w, r)
+			return
+		}
+
+		if _, ok := r.Form["viewrandom"]; ok {
+			handlerViewRandom(w, r)
+			return
+		}
+	}
+	handlerEditLetter(w, r)
+}
+
+func handlerFavicon(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotFound)
+}
+
 // Linux: to listen on ports <1024: sudo setcap cap_net_bind_service=+ep dlo
 func main() {
 	flag.Parse()
+
+	random = MakeAtomicRand()
+
+	files = MakeFileIndex(config.DataFolder)
+	files.RefeshFileCount()
 
 	t, err := template.ParseFiles(
 		filepath.Join(config.WWWfolder, "dloedit.html"),
@@ -90,10 +107,11 @@ func main() {
 	exitOnError(err)
 	log.Println(t.DefinedTemplates())
 
-	EditTemplate = t.Lookup("dloedit.html")
-	ViewTemplate = t.Lookup("dloview.html")
+	editTemplate = t.Lookup("dloedit.html")
+	viewTemplate = t.Lookup("dloview.html")
 
 	http.HandleFunc("/", handler)
+	http.HandleFunc("/favicon.ico", handlerFavicon)
 
 	log.Printf("Listening on port %d", config.ListenPort)
 	err = http.ListenAndServe(fmt.Sprintf(":%d", config.ListenPort), nil)

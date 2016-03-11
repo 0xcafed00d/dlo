@@ -66,12 +66,12 @@ func handlerViewRandom(w http.ResponseWriter, r *http.Request) {
 	n := random.Int63n(files.GetFileCount())
 	data, err := files.LoadFile(n)
 	logOnError(err)
+	log.Println(n, data)
 	logOnError(viewTemplate.Execute(w, data))
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	log.Println(r.RequestURI)
 
 	if r.Method == "POST" {
 		if _, ok := r.Form["postletter"]; ok {
@@ -88,7 +88,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func handlerFavicon(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotFound)
+	http.ServeFile(w, r, filepath.Join(config.WWWfolder, "favicon.ico"))
 }
 
 // Linux: to listen on ports <1024: sudo setcap cap_net_bind_service=+ep dlo

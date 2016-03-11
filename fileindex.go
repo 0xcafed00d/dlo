@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strconv"
 	"sync"
 )
 
@@ -98,5 +98,15 @@ func (fi *FileIndex) GetFileCount() int64 {
 }
 
 func (fi *FileIndex) LoadFile(index int64) (string, error) {
-	return "some file data " + strconv.FormatInt(index, 10), nil
+	f, err := os.Open(fi.makeFileName(index))
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	b, err := ioutil.ReadAll(f)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }
